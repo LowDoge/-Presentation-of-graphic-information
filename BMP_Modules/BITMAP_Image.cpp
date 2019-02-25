@@ -1,5 +1,6 @@
 #include "BITMAP_Image.hpp"
-
+#include <iostream>
+#include <fstream>
 BITMAP_Image::BITMAP_Image(std::string file){
     if(loadFileImage(file) != 0){
         exit(-1);
@@ -8,83 +9,45 @@ BITMAP_Image::BITMAP_Image(std::string file){
 }
 
 int BITMAP_Image::unloadFileImage(std::string file){
-    FILE *image = fopen(file.c_str(), "wb");
-    
-    if(f_header == NULL || inf_header == NULL){
-        return -1;
+    std::ofstream image(file, std::ios::binary);
+
+    if(image.good()){
+        image.write(reinterpret_cast<char*>(f_header), sizeof(BitMapFileHeader));
+        image.write(reinterpret_cast<char*>(inf_header), sizeof(BitMapInfoHeader));
+        image.write(reinterpret_cast<char*>(palette), sizeof(RGBQuad) * BITMAP_PALETTE);
+        for(int i = 0; i < heightInBytes; i++){
+            image.write(reinterpret_cast<char*>(raster[i]), sizeof(unsigned char) * widthInBytes);
+        }
     }
 
-    if(image == NULL){
-        return -1;
-    }
+    image.close();
 
-    if(fwrite(f_header, sizeof(BitMapFileHeader), 1, image)){
-    }else{
-        return -1;
-    }
-
-    if(fwrite(inf_header, sizeof(BitMapInfoHeader), 1, image)){
-    }else{
-        return -1;
-    }
-
-    if(fwrite(palette, sizeof(RGBQuad), BITMAP_PALETTE, image)){
-    }else{
-        return -1;
-    }
-
-    fwrite(raster, sizeof(unsigned char), widthInBytes * heightInBytes, image);
-    
-    fclose(image);
     return 0;
 }
 
 int BITMAP_Image::loadFileImage(std::string file){
-    FILE *image = fopen(file.c_str(), "rb");
+    std::ifstream image(file, std::ios::binary);
 
-    if(image == NULL){
-        return -1;
-    }
+    if(image.good()){
+        image.seekg(0, std::ios::beg);
+        image.read(reinterpret_cast<char*>(f_header), sizeof(BitMapFileHeader));
+        image.read(reinterpret_cast<char*>(inf_header), sizeof(BitMapInfoHeader));
 
-    if(f_header == NULL || inf_header == NULL){
-        return -1;
-    }
+        widthInBytes = inf_header->Width * inf_header->BitCount / 8;
+        heightInBytes = inf_header->Height * inf_header->BitCount / 8;
 
-    if(fread(f_header, sizeof(BitMapFileHeader), 1, image)){
-        if(feof(image)){
-            return -1;
+        image.read(reinterpret_cast<char*>(palette), sizeof(RGBQuad) * BITMAP_PALETTE);
+
+        raster = new unsigned char*[heightInBytes];
+        for(int i = 0; i < heightInBytes; i++){
+            raster[i] = new unsigned char[widthInBytes];
+            image.read(reinterpret_cast<char*>(raster[i]), sizeof(unsigned char) * widthInBytes);
         }
-    }else{
-        return -1;
+
     }
 
-    if(fread(inf_header, sizeof(BitMapInfoHeader), 1, image)){
-        if(feof(image)){
-            return -1;
-        }
-    }else{
-        return -1;
-    }
+    image.close();
 
-    if(fread(palette, sizeof(RGBQuad), BITMAP_PALETTE, image)){
-        if(feof(image)){
-            return -1;
-        }
-    }else{
-        return -1;
-    }
-
-    widthInBytes = inf_header->Width * inf_header->BitCount / 8;
-    heightInBytes = inf_header->Height * inf_header->BitCount / 8;
-
-    raster = new unsigned char[heightInBytes * widthInBytes];
-
-    if(!raster){
-        return -1;
-    }else{
-        fread(raster, sizeof(unsigned char), widthInBytes * heightInBytes, image);
-    }
-    fclose(image);
     return 0;
 }
 
@@ -109,15 +72,15 @@ void BITMAP_Image::convertToGreyColor(void){
 }
 
 void BITMAP_Image::drawBorder(int size, uint8_t red, uint8_t green, uint8_t blue){
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < widthInBytes; j++){
-            raster[i * widthInBytes + j] = RGB_TO_SINGLE_BYTE(red, green, blue);//down side
-            raster[widthInBytes*heightInBytes - widthInBytes - i*widthInBytes + j] = RGB_TO_SINGLE_BYTE(red, green, blue);//up side
+    for(int counter = 0; counter < size; counter++){
+        for(int i = 0; i < heightInBytes; i++){
+            raster[i][0 + counter] = RGB_TO_SINGLE_BYTE(red, green, blue);
+            raster[i][widthInBytes - 1 - counter] = RGB_TO_SINGLE_BYTE(red, green, blue);
         }
 
-        for(int j = 0; j < heightInBytes; j++){
-            raster[widthInBytes*j + i] = RGB_TO_SINGLE_BYTE(red, green, blue);//left side
-            raster[widthInBytes*j + widthInBytes -i] = RGB_TO_SINGLE_BYTE(red, green, blue); //right side
+        for(int i = 0; i < widthInBytes; i++){
+            raster[0 + counter][i] = RGB_TO_SINGLE_BYTE(red, green, blue);
+            raster[heightInBytes - 1 - counter][0] = RGB_TO_SINGLE_BYTE(red, green, blue);
         }
     }
 }
@@ -151,34 +114,11 @@ void BITMAP_Image::rotateImage(int angle){
     if(angle % 90 != 0){
         return;
     }
-
     int rotationsAmount = angle / 90;
 
-    unsigned char **rasterMatrix = new unsigned char*[heightInBytes];
-    for(uint16_t i = 0; i < heightInBytes; i++){
-        rasterMatrix[i] = new unsigned char[widthInBytes];
+    for(int i = 0; i < rotationsAmount; i++){
+        raster = rotateMatrix(raster, widthInBytes, heightInBytes);
     }
-
-
-    for(uint16_t i = 0; i < heightInBytes; i++){//convert to matrix
-        for(uint16_t j = 0; j < widthInBytes; j++){
-            rasterMatrix[i][j] = raster[i*widthInBytes + j];
-        }
-    }
-    for(uint16_t i = 0; i < rotationsAmount; i++){
-        rasterMatrix = rotateMatrix(rasterMatrix, widthInBytes, heightInBytes);
-    }
-
-    for(uint16_t i = 0; i < heightInBytes; i++){//convert to single array
-        for(uint16_t j = 0; j < widthInBytes; j++){
-            raster[i*widthInBytes + j] = rasterMatrix[i][j];
-        }
-    }
-    
-    for(uint16_t i = 0; i < heightInBytes; i++){//delete old matrix
-        delete[] rasterMatrix[i];
-    }
-    delete[] rasterMatrix;
 
     inf_header->Width = widthInBytes;
     inf_header->Height = heightInBytes;
@@ -195,6 +135,9 @@ BITMAP_Image::~BITMAP_Image(){
         delete[] palette;
     }
     if(raster != NULL){
+        for(int i = 0; i < heightInBytes; i++){
+            delete[] raster[i];
+        }
         delete[] raster;
     }
 }

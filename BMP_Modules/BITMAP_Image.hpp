@@ -10,7 +10,7 @@ private:
     BitMapFileHeader *f_header = new BitMapFileHeader;
     BitMapInfoHeader *inf_header = new BitMapInfoHeader;
     RGBQuad *palette = new RGBQuad[BITMAP_PALETTE];
-    unsigned char *raster = nullptr;
+    unsigned char **raster = nullptr;
     uint16_t widthInBytes, heightInBytes;
     unsigned char** rotateMatrix(unsigned char **matrix, uint16_t &width, uint16_t &height);
 public:
