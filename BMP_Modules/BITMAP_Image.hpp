@@ -3,7 +3,6 @@
 
 #include "BITMAP_Struct.hpp"
 #include <string>
-#define BITMAP_PALETTE 256
 
 class BITMAP_Image{
 private:
@@ -13,6 +12,7 @@ private:
     unsigned char **raster = nullptr;
     uint16_t widthInBytes, heightInBytes;
     unsigned char** rotateMatrix(unsigned char **matrix, uint16_t &width, uint16_t &height);
+    int BITMAP_PALETTE;
 public:
     BITMAP_Image(void);
     BITMAP_Image(std::string file);

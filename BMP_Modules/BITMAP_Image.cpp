@@ -1,11 +1,12 @@
 #include "BITMAP_Image.hpp"
 #include <iostream>
 #include <fstream>
+#include <cmath>
 BITMAP_Image::BITMAP_Image(std::string file){
     if(loadFileImage(file) != 0){
         exit(-1);
     }
-
+    std::cout << widthInBytes << "x" << heightInBytes << " palette:" << BITMAP_PALETTE << std::endl;
 }
 
 int BITMAP_Image::unloadFileImage(std::string file){
@@ -33,9 +34,9 @@ int BITMAP_Image::loadFileImage(std::string file){
         image.read(reinterpret_cast<char*>(f_header), sizeof(BitMapFileHeader));
         image.read(reinterpret_cast<char*>(inf_header), sizeof(BitMapInfoHeader));
 
-        widthInBytes = inf_header->Width * inf_header->BitCount / 8;
-        heightInBytes = inf_header->Height * inf_header->BitCount / 8;
-
+        widthInBytes = inf_header->Width;
+        heightInBytes = inf_header->Height;
+        BITMAP_PALETTE = pow(2, inf_header->BitCount);
         image.read(reinterpret_cast<char*>(palette), sizeof(RGBQuad) * BITMAP_PALETTE);
 
         raster = new unsigned char*[heightInBytes];
@@ -43,7 +44,7 @@ int BITMAP_Image::loadFileImage(std::string file){
             raster[i] = new unsigned char[widthInBytes];
             image.read(reinterpret_cast<char*>(raster[i]), sizeof(unsigned char) * widthInBytes);
         }
-
+    
     }
 
     image.close();
@@ -80,7 +81,7 @@ void BITMAP_Image::drawBorder(int size, uint8_t red, uint8_t green, uint8_t blue
 
         for(int i = 0; i < widthInBytes; i++){
             raster[0 + counter][i] = RGB_TO_SINGLE_BYTE(red, green, blue);
-            raster[heightInBytes - 1 - counter][0] = RGB_TO_SINGLE_BYTE(red, green, blue);
+            raster[heightInBytes - 1 - counter][i] = RGB_TO_SINGLE_BYTE(red, green, blue);
         }
     }
 }
