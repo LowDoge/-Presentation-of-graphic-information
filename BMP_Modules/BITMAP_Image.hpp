@@ -5,7 +5,7 @@
 #include <string>
 
 class BITMAP_Image{
-private:
+protected:
     BitMapFileHeader *f_header = new BitMapFileHeader;
     BitMapInfoHeader *inf_header = new BitMapInfoHeader;
     RGBQuad *palette = new RGBQuad[BITMAP_PALETTE];
@@ -13,6 +13,7 @@ private:
     uint16_t widthInBytes, heightInBytes;
     unsigned char** rotateMatrix(unsigned char **matrix, uint16_t &width, uint16_t &height);
     int BITMAP_PALETTE;
+    std::string fileName;
 public:
     BITMAP_Image(void);
     BITMAP_Image(std::string file);
