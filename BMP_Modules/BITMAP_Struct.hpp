@@ -8,7 +8,7 @@
 struct BitMapFileHeader{//14 bytes
     unsigned char Type[2];//Сигнатура ВМ
     unsigned char Size[4];//Размер файла
-    unsigned char Reserved1[2];//Зарезервировано
+    uint16_t Reserved1;//Зарезервировано
     unsigned char Reserved2[2];//Зарезервировано
     unsigned char OffsetBits[4];//Смещение изображения от начала файла
 };

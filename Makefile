@@ -19,8 +19,11 @@ bitmap_lib.o: OBJ_DIR $(LIBS_FOLDER)BITMAP_Image.cpp
 bmp_viewer.o: OBJ_DIR $(SRC_FOLDER)BMP_Viewer.cpp
 	$(CC) $(CFLAGS) $(SRC_FOLDER)BMP_Viewer.cpp -o $(OBJ_FOLDER)$@
 
-$(EXECUTABLE): BIN_DIR main.o bitmap_lib.o bmp_viewer.o
-	$(CC) $(OBJ_FOLDER)main.o $(OBJ_FOLDER)bitmap_lib.o $(OBJ_FOLDER)bmp_viewer.o -o $(BIN_FOLDER)$@ -lm -lGL -lGLEW -lglut -lGLU
+steg.o: OBJ_DIR $(SRC_FOLDER)Steganography.cpp
+	$(CC) $(CFLAGS) $(SRC_FOLDER)Steganography.cpp -o  $(OBJ_FOLDER)$@
+
+$(EXECUTABLE): BIN_DIR main.o bitmap_lib.o bmp_viewer.o steg.o
+	$(CC) $(OBJ_FOLDER)main.o $(OBJ_FOLDER)bitmap_lib.o $(OBJ_FOLDER)bmp_viewer.o $(OBJ_FOLDER)steg.o -o $(BIN_FOLDER)$@ -lm -lGL -lGLEW -lglut -lGLU
 
 BIN_DIR:
 	@if [ ! -d $(BIN_FOLDER) ]; then mkdir $(BIN_FOLDER); fi
